@@ -1,0 +1,57 @@
+unit UqueryType;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ExtCtrls;
+
+type
+  TfrmType = class(TForm)
+    GroupBox1: TGroupBox;
+    rbFill: TRadioButton;
+    rbClear: TRadioButton;
+    rbBlend: TRadioButton;
+    procedure rbFillClick(Sender: TObject);
+    procedure rbClearClick(Sender: TObject);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+    procedure rbBlendClick(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    flagTask:integer;
+    { Public declarations }
+  end;
+
+var
+  frmType: TfrmType;
+
+implementation
+
+{$R *.dfm}
+
+procedure TfrmType.rbFillClick(Sender: TObject);
+begin
+  flagTask:=1;
+end;
+
+procedure TfrmType.rbClearClick(Sender: TObject);
+begin
+  flagTask:=2;
+end;
+
+procedure TfrmType.rbBlendClick(Sender: TObject);
+begin
+  flagTask:=3;
+end;
+
+procedure TfrmType.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+begin
+  if flagTask=0 then
+  begin
+    Application.MessageBox('请选择作业类型!','hint',MB_OK);
+    CanClose:=False;
+  end;
+end;
+
+end.

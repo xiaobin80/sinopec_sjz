@@ -1,0 +1,16 @@
+object frame_log: Tframe_log
+  Left = 0
+  Top = 0
+  Width = 408
+  Height = 194
+  TabOrder = 0
+  object memoLog: TMemo
+    Left = 0
+    Top = 0
+    Width = 408
+    Height = 194
+    Align = alClient
+    ScrollBars = ssVertical
+    TabOrder = 0
+  end
+end

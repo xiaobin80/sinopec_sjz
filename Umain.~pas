@@ -1,0 +1,737 @@
+unit Umain;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, StrUtils,
+  Dialogs, Menus, ExtCtrls, DBGrids, StdCtrls, DB, ADODB, ComCtrls, Grids,
+  ActnList, Printers,CommDlg, UpublicFunc, ComObj, UlogMemo, XPMenu, ImgList, yupack;
+
+type
+  TfrmMain = class(TForm)
+    MainMenu1: TMainMenu;
+    F1: TMenuItem;
+    r1: TMenuItem;
+    P1: TMenuItem;
+    StatusBarMain: TStatusBar;
+    pnlMain: TPanel;
+    P2: TMenuItem;
+    Q1: TMenuItem;
+    N1: TMenuItem;
+    A1: TMenuItem;
+    systemSet1: TMenuItem;
+    pwd3: TMenuItem;
+    popMenuOrd: TPopupMenu;
+    p4: TMenuItem;
+    N2: TMenuItem;
+    N3: TMenuItem;
+    N4: TMenuItem;
+    N5: TMenuItem;
+    S1: TMenuItem;
+    pnlLog: TPanel;
+    N6: TMenuItem;
+    L1: TMenuItem;
+    EXCELE1: TMenuItem;
+    C1: TMenuItem;
+    TreeView1: TTreeView;
+    Memo2: TMemo;
+    DataSource_carNum: TDataSource;
+    N7: TMenuItem;
+    Timer_car: TTimer;
+    XPMenu1: TXPMenu;
+    N8: TMenuItem;
+    N9: TMenuItem;
+    ImageList_menu: TImageList;
+    ImageList_pop: TImageList;
+    printSet: TMenuItem;
+    PM_input3: TPopupMenu;
+    pnlTop: TPanel;
+    pnlOrd: TPanel;
+    SplitterMain: TSplitter;
+    TreeViewMain: TTreeView;
+    DBGrid1: TDBGrid;
+    Panel1: TPanel;
+    Panel2: TPanel;
+    YusoftGradientButton1: TYusoftGradientButton;
+    Panel3: TPanel;
+    Bevel1: TBevel;
+    Bevel2: TBevel;
+    Label1: TLabel;
+    edt_pStation: TEdit;
+    Label2: TLabel;
+    edtCargo: TEdit;
+    Label3: TLabel;
+    edtOstation: TEdit;
+    StaticText1: TStaticText;
+    Label4: TLabel;
+    Memo1: TMemo;
+    save15S: TMenuItem;
+    N15: TMenuItem;
+    save16Up: TMenuItem;
+    save17Down: TMenuItem;
+    procedure N1Click(Sender: TObject);
+    procedure A1Click(Sender: TObject);
+    procedure Q1Click(Sender: TObject);
+    procedure pwd3Click(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure N4Click(Sender: TObject);
+    procedure L1Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure C1Click(Sender: TObject);
+    procedure S1Click(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure TreeViewMainClick(Sender: TObject);
+    procedure EXCELE1Click(Sender: TObject);
+    procedure P2Click(Sender: TObject);
+    procedure N7Click(Sender: TObject);
+    procedure Timer_carTimer(Sender: TObject);
+    procedure N9Click(Sender: TObject);
+    procedure printSetClick(Sender: TObject);
+    procedure save15SClick(Sender: TObject);
+    procedure save16UpClick(Sender: TObject);
+    procedure save17DownClick(Sender: TObject);
+  private
+    x1,y1:integer;
+    logStr:WideString;
+    addTitle:WideString;
+    //operator
+    normalOper:WideString;
+    recordCount_oper:Integer;
+    //
+    sqlStr_load,sqlStr_unload:WideString;
+    //
+    SnStr,pStationStr,CarGoStr,OstationStr,NoteStr:WideString;
+    //
+    procedure appAgent(sender:TObject);
+    { Private declarations }
+  public
+    managerBool:Boolean;
+    operNameStr:WideString;
+    date_selected:WideString;
+    reference_date:WideString;
+    //
+    procedure callOrdForm(tableNameStr,sqlStrA:WideString;taskType:Integer);
+    procedure callBlenForm(past_timeStr:WideString);
+    procedure logShow;
+    procedure treeCreate;
+    procedure treeDelete;
+    function treeRefresh:WideString;
+    { Public declarations }
+  end;
+
+const
+  rootName='AEI01';
+
+var
+  frmMain: TfrmMain;
+
+  frame1:Tframe_log;
+    
+implementation
+uses
+  UqueryType,UqueryDate,UtrainOrd,UtrainBlend,Ustevedore,u_passet,u_about,
+  UexpQuant,Uquantification,Ulog,UcarKind,Ubreed,UDataModule_ado;
+
+  {$R *.dfm}
+
+
+procedure TfrmMain.appAgent(sender:TObject);
+begin
+  StatusBarMain.Panels[0].Text:=Application.Hint;
+end;
+
+procedure TfrmMain.treeCreate;
+begin
+  TreeViewMain.Items.Add(nil,rootName);
+end;
+
+procedure TfrmMain.treeDelete;
+var
+  rootNode:TTreeNode;
+begin
+  rootNode:=TreeViewMain.Items.GetFirstNode;
+  TreeViewMain.Items.Delete(rootNode);
+end;
+
+function TfrmMain.treeRefresh:WideString;
+var
+  iRec:integer;
+  nodeCount1:integer;
+  //
+  RefreshTV:TADOQuery;
+  //
+  lnNode:TTreeNode;
+  //retrun
+  retWStr:WideString;
+begin
+//
+  RefreshTV:=TADOQuery.Create(Self);
+  RefreshTV.Connection:=DataModule_ado.adoConnMain;
+  //
+  RefreshTV.Close;
+  RefreshTV.SQL.Clear;
+  RefreshTV.SQL.Text:='select DISTINCT past_time from trainOrder';
+  RefreshTV.Open;
+
+  nodeCount1:=RefreshTV.RecordCount;
+  for iRec:=1 to nodeCount1 do
+  begin
+    retWStr:=RefreshTV.Fields[0].AsString;
+    TreeViewMain.Items.AddChild(TreeViewMain.Items.Item[0],retWStr);
+    RefreshTV.Next;
+  end;
+  //expand node
+  lnNode:=TreeViewMain.Items.GetFirstNode;
+  while lnNode<>nil do
+  begin
+    lnNode.Expand(False);
+    lnNode:=lnNode.getNextSibling;
+  end;
+  //
+  FreeAndNil(RefreshTV);
+  Result:=retWStr;
+end;
+
+procedure TfrmMain.callOrdForm(tableNameStr,sqlStrA:WideString;taskType:Integer);
+begin
+  frmTrainOrd:=TfrmTrainOrd.Create(nil);
+  //
+  frame1.addMemoLog(addTitle);
+  frmTrainOrd.Caption:=N1.Caption+addTitle;
+  //
+  frmTrainOrd.pnlTop.Caption:=tableNameStr;
+  frmTrainOrd.pnlOrd.Caption:=IntToStr(taskType);
+  frmTrainOrd.pnlSQLstr.Caption:=sqlStrA;
+  frmTrainOrd.pnlPastTimeStr.Caption:=date_selected;//watiProcess_car use
+  //
+  frmTrainOrd.Update;
+  frmTrainOrd.ShowModal;
+end;
+
+procedure TfrmMain.callBlenForm(past_timeStr:WideString);
+begin
+  frmTrainBlend:=TfrmTrainBlend.Create(nil);
+  //
+  frame1.addMemoLog(addTitle);
+  frmTrainBlend.Caption:=N1.Caption+addTitle;
+  //
+  frmTrainBlend.pnlOrd.Caption:=past_timeStr;
+  //
+  frmTrainBlend.Update;
+  frmTrainBlend.ShowModal;
+end;
+
+procedure TfrmMain.N1Click(Sender: TObject);
+var
+  taskTypeI6:Integer;
+begin
+  //
+  if date_selected='' then
+  begin//surplus car settlement
+    (*addTitle:='---混合作业';
+    // load&unload
+    DataModule_ado.viewTask_load('wpc','0');
+    DataModule_ado.viewTask_unload('wpc','0');
+    //
+    DataModule_ado.viewTask_watiProcess(date_selected);
+    callBlenForm(date_selected);*)
+    Exit;
+  end;
+  //
+  try
+    frmType:=TfrmType.Create(nil);
+    frmType.Update;
+    frmType.ShowModal;
+
+    taskTypeI6:=frmType.flagTask;
+    case taskTypeI6 of
+      1:
+        begin
+          addTitle:='---装车作业';
+          DataModule_ado.add2Task_more(date_selected,taskTypeI6);//add load_car
+          DataModule_ado.subtractTrainOrder(date_selected); //sub trainOrder
+          DataModule_ado.view2task('load_car',sqlStr_load,date_selected);
+          DataModule_ado.viewTask_watiProcess(date_selected);
+          callOrdForm('load_car',sqlStr_load,taskTypeI6);
+        end;
+      2:
+        begin
+          addTitle:='---卸车作业';
+          DataModule_ado.add2Task_more(date_selected,taskTypeI6);//add load_car
+          DataModule_ado.subtractTrainOrder(date_selected); //sub trainOrder
+          DataModule_ado.view2task('unload_car',sqlStr_unload,date_selected);
+          DataModule_ado.viewTask_watiProcess(date_selected);
+          callOrdForm('unload_car',sqlStr_unload,taskTypeI6);
+        end;
+      3:
+        begin
+          addTitle:='---混合作业';
+          DataModule_ado.addWPC_more(date_selected);//add waitProcess
+          DataModule_ado.subtractTrainOrder(date_selected); //sub trainOrder
+          // load&unload
+          DataModule_ado.viewTask_load('wpc','0');
+          DataModule_ado.viewTask_unload('wpc','0');
+          //
+          DataModule_ado.viewTask_watiProcess(date_selected);
+          callBlenForm(date_selected);
+        end;
+    end;
+    //tree
+    treeDelete;
+    treeCreate;
+    treeRefresh;
+    DataModule_ado.viewDataTrain(date_selected);
+  finally
+    frmType.Free;
+  end;
+  //
+  date_selected:='';
+end;
+
+procedure TfrmMain.A1Click(Sender: TObject);
+begin
+  frm_about:=Tfrm_about.Create(nil);
+  frm_about.Update;
+  frm_about.ShowModal;
+end;
+
+procedure TfrmMain.Q1Click(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TfrmMain.pwd3Click(Sender: TObject);
+var
+  i5:integer;
+begin
+//
+  frm_passset:=Tfrm_passset.Create(nil);
+  frm_passset.Update;
+  //1: have authority
+  if managerBool then
+  begin
+    recordCount_oper:=DataModule_ado.queryNormalOperatorCount; 
+    for i5:=0 to recordCount_oper-1 do
+    begin
+      normalOper:=DataModule_ado.ADOQuery_temp.Fields[0].Text;
+      frm_passset.cmbUID.Items.Append(normalOper);
+      DataModule_ado.ADOQuery_temp.Next;
+    end;
+    frm_passset.cmbUID.Items.Append(operatorStr);
+    //release set
+    frm_passset.btn_add.Visible:=True;
+    frm_passset.cmbUID.Enabled:=True;
+    frm_passset.cmbUID.Color:=clWindow;
+    frm_passset.CheckBox_tag.Enabled:=True;
+    frm_passset.edt_userset.Enabled:=True;
+    //flag
+    frm_passset.managerB:=True;
+  end
+  else
+  begin
+    frm_passset.cmbUID.Items.Add(operatorStr);
+  end;
+  //
+  frame1.addMemoLog(pwd3.Caption);
+  //
+  frm_passset.cmbUID.ItemIndex:=0;
+  frm_passset.ShowModal;
+end;
+
+procedure TfrmMain.L1Click(Sender: TObject);
+var
+  i4:integer;
+  sqlStr_log,sqlStr_log1,sqlStr_log2,sqlStr_log3:WideString;
+begin
+  if managerBool then
+  begin
+    frmLog:=TfrmLog.Create(nil);
+    //
+    logStr:='查看日志';
+    frmLog.Caption:=logStr;
+    frame1.addMemoLog(logStr);
+    frmLog.pnlTop.Caption:='日志纪录';
+    //
+    recordCount_oper:=DataModule_ado.queryNormalOperatorCount;    
+    for i4:=0 to recordCount_oper-1 do
+    begin
+      normalOper:=DataModule_ado.ADOQuery_temp.Fields[0].Text;
+      sqlStr_log1:=' UNION select operName AS 操作员,operLog AS 日志内容,'
+                +'operTime AS 记录时间 from logTable where operID='+normalOper;
+      sqlStr_log2:=sqlStr_log2+sqlStr_log1;
+      DataModule_ado.ADOQuery_temp.Next;
+    end;
+    sqlStr_log3:='select operName AS 操作员,operLog AS 日志内容,'
+                +'operTime AS 记录时间 from logTable where operID='+operatorStr;        
+    sqlStr_log:=sqlStr_log3+sqlStr_log2;
+    //
+    frmLog.pnlMain.Caption:=sqlStr_log;
+    //
+    frmLog.Update;
+    frmLog.ShowModal;
+  end
+  else
+  begin
+    Application.MessageBox('没有管理员权限不能查看日志!','hint',MB_OK);
+    Exit;
+  end;
+end;
+
+procedure TfrmMain.N4Click(Sender: TObject);
+begin
+//judge whether new data//rport table
+  if managerBool then
+  begin
+    try
+      frmQueryDate:=TfrmQueryDate.Create(nil);
+      frame1.addMemoLog(n4.Caption);
+      frmQueryDate.Update;
+      frmQueryDate.ShowModal;
+      //进行查询处理
+    finally
+      frmQueryDate.Free;
+    end;
+  end
+  else
+  begin
+    Application.MessageBox('没有管理员权限不能进入货车通知单!','hint',MB_OK);
+    Exit;
+  end;
+end;
+
+procedure TfrmMain.C1Click(Sender: TObject);
+begin
+  if managerBool then
+  begin
+    frmCarKind:=TfrmCarKind.Create(nil);
+    logStr:='车种设置';
+    frmCarKind.Caption:=logStr;
+    frame1.addMemoLog(logStr);
+    frmCarKind.pnlTop.Caption:=logStr;
+    frmCarKind.Update;
+    frmCarKind.ShowModal;
+  end
+  else
+  begin
+    Application.MessageBox('没有管理员权限不能进行车种设置!','hint',MB_OK);
+    Exit;
+  end;
+end;
+
+procedure TfrmMain.S1Click(Sender: TObject);
+begin
+  if managerBool then
+  begin
+    frmBreed:=TfrmBreed.Create(nil);
+    logStr:='设置延时费';
+    frmBreed.Caption:=logStr;
+    frame1.addMemoLog(logStr);
+    frmBreed.pnlTop.Caption:=logStr;
+    frmBreed.Update;
+    frmBreed.ShowModal;
+  end
+  else
+  begin
+    Application.MessageBox('没有管理员权限不能进行延时费设置!','hint',MB_OK);
+    Exit;
+  end;
+end;
+
+procedure TfrmMain.P2Click(Sender: TObject);
+begin
+  printGridData(DataSource_carNum,DBGrid1);
+  frame1.addMemoLog(P2.Caption)
+end;
+
+procedure TfrmMain.N7Click(Sender: TObject);
+var
+  capStr:WideString;
+begin
+  frmStevedore:=TfrmStevedore.Create(nil);
+  capStr:=N7.Caption;
+  frmStevedore.Caption:=capStr;
+  frmStevedore.pnlTop.Caption:=capStr;
+  frmStevedore.pnlMain.Caption:=DataModule_ado.titleExcelStr;
+  frame1.addMemoLog(capStr);
+  //
+  
+  //
+  frmStevedore.Update;
+  frmStevedore.ShowModal;
+end;
+
+procedure TfrmMain.FormCreate(Sender: TObject);
+begin
+  frmMain.Caption:=DataModule_ado.titleFrmMain;
+  //calculate screen size
+  if fullScreenArea(x1,y1)then
+  begin
+    StatusBarMain.Panels.Insert(0);
+    StatusBarMain.Panels[0].Width:=(y1 div 100)*70;
+    StatusBarMain.Panels[0].Text:=frmMain.Caption;
+
+    StatusBarMain.Panels.Insert(1);
+    StatusBarMain.Panels[1].Width:=(y1 div 100)*10;
+    StatusBarMain.Panels[1].Text:='CDP_x5';
+
+    StatusBarMain.Panels.Insert(2);
+    StatusBarMain.Panels[2].Width:=(y1 div 100)*20;
+    StatusBarMain.Panels[2].Text:='ver1.1';
+  end;
+  //sql evaluation
+  sqlStr_load:='seriary_number AS 顺序,cargo_name AS 品名,car_number AS 车号,loadMemo AS 备注,'
+        +'past_station AS 到站,load_place AS 装车地点,entrant_time AS 送入时间,'
+        +'finish_time AS 装完时间,takeout_time AS 取出时间,load_notepad AS 记事,'
+        +'SN,past_time,saveTime,car_breed,dictionary';
+        
+  sqlStr_unload:='seriary_number AS 顺序,cargo_name AS 品名,car_number AS 车号,unloadMemo AS 备注,'
+        +'send_station AS 发站,unload_place AS 卸车地点,entrant_time AS 送入时间,'
+        +'finish_time AS 卸完时间,takeout_time AS 取出时间,unload_notepad AS 记事,'
+        +'SN,past_time,saveTime,car_breed,dictionary';  
+  //application hint
+  Application.OnHint:=appAgent;
+  //log show
+  logShow;
+  //treeview
+  treeCreate;
+  reference_date:=treeRefresh;
+  DataModule_ado.viewDataTrain(reference_date);
+  normGridColWidth(DBGrid1,80);
+  //export excel
+  DataModule_ado.exportExcel_ord(reference_date);
+  //dir oper
+  operDir;
+  //xp menu
+  XPMenu1.Active:=True;
+end;
+
+procedure TfrmMain.FormShow(Sender: TObject);
+var
+  recCount:integer;
+  operSqlStr1:WideString;
+begin
+  IF operatorStr='9999' then
+  begin
+    pnlMain.Enabled:=False;
+    //report
+    r1.Enabled:=False;
+    //file menu
+    N9.Enabled:=False;
+    printSet.Enabled:=False;
+    P2.Enabled:=False;
+    //system set
+    C1.Enabled:=False;
+    S1.Enabled:=False;
+    L1.Enabled:=False;
+  end;
+  try
+    operSqlStr1:='select OperID,OperName from operator where tag=true and OperID='+operatorStr;
+    recCount:=DataModule_ado.queryRecordCount(operSqlStr1);
+    if recCount<>0 then
+    begin
+      managerBool:=True;
+    end;
+    //
+    operNameStr:=DataModule_ado.getOperatorName(operatorStr);
+
+  except
+    Exit;
+  end;
+  //add log
+  logStr:='登录系统';
+  frame1.addMemoLog(logStr);
+end;
+
+procedure TfrmMain.logShow;
+begin
+  frame1:=Tframe_log.Create(Owner);
+  frame1.Parent:=pnlLog;
+  frame1.Align:=alClient;
+  frame1.Show;
+end;
+
+procedure TfrmMain.FormClose(Sender: TObject; var Action: TCloseAction);
+var
+  i2:integer;
+begin
+  //
+  frame1.addMemoLog('退出系统');
+  for i2:=0 to frame1.memoLog.Lines.Count-1 do
+  begin
+    logStr:=frame1.memoLog.Lines.Strings[i2];
+    DataModule_ado.addLogTableData(operatorStr,operNameStr,logStr,DateTimeToStr(Now));
+  end;
+end;
+
+procedure TfrmMain.TreeViewMainClick(Sender: TObject);
+var
+  //
+  recordcountI:integer;
+begin
+//
+  if TreeViewMain.Selected.Text=rootName then Exit;
+  date_selected:=TreeViewMain.Selected.Text;
+  recordcountI:=DataModule_ado.viewDataTrain(date_selected);
+  //
+  normGridColWidth(DBGrid1,80);
+  StatusBarMain.Panels[0].Text:=IntToStr(recordcountI)+' 条数据';
+  //export excel
+  DataModule_ado.exportExcel_ord(date_selected);
+end;
+
+procedure TfrmMain.EXCELE1Click(Sender: TObject);
+var
+ colnum,slnum,i:integer;
+ headstr:string;
+begin
+  if DataSource_carNum.DataSet.RecordCount=0 then Exit;
+  //
+  DataModule_ado.ADODataSet_Excel.Close;
+  DataModule_ado.ADODataSet_Excel.Open;
+  //
+  TreeView1.Items.Clear;
+  Memo2.Lines.Clear ;
+  colnum:=DataModule_ado.ADODataSet_Excel.FieldDefList.Count;
+  Maxnum :=1;
+  //slnum:=0;
+  for i:=1 to colnum do
+  begin
+   slnum:=1;
+   headstr:=DataModule_ado.ADODataSet_Excel.FieldDefList[i-1].Name;
+   while Pos('|',headstr) > 0 do
+     begin
+      Delete(headstr, 1, Pos('|', headstr));
+      slnum:=slnum+1;
+     end;
+    if slNum>Maxnum then Maxnum:=slNum;
+  end;
+  treeADO(DataModule_ado.ADODataSet_Excel,TreeView1);
+  try
+    myexcel := createoleobject('excel.application');
+    myexcel.application.workbooks.add;
+    myexcel.caption:=pnlLog.Caption;
+    myexcel.application.visible:=true;
+    workbook:=myexcel.application.workbooks[1];
+    worksheet:=workbook.worksheets.item[1];
+  except
+    application.MessageBox('没有发现Excel,请安装office!','提示信息',
+                                                        MB_OK + MB_ICONINFORMATION);
+    exit;
+  end;
+  WriteheaderADO(DataModule_ado.ADODataSet_Excel,pnlLog.Caption,9,TreeView1);
+  WriteExcelData(DataModule_ado.ADODataSet_Excel);
+  //页脚设置
+  myexcel.activesheet.pagesetup.centerfooter:='第&P页';
+  //
+  worksheet.saveAs(excelDir+'\'+dateTimeStrFull+'lcbzsx.xls');
+  //workbook.close;
+  //myexcel.quit;
+  //add logmemo
+  frame1.addMemoLog(EXCELE1.Caption);
+end;
+
+procedure TfrmMain.Timer_carTimer(Sender: TObject);
+begin
+  if DataModule_ado.compareTrain2car_number then
+  begin
+      frame1.addMemoLog('检测到新数据');
+      DataModule_ado.addTrianOrder(DataModule_ado.maxCar_number);
+      DataModule_ado.addCar_nmuber(DataModule_ado.maxCar_number);
+      treeDelete;
+      treeCreate;
+      date_selected:=treeRefresh;
+      DataModule_ado.viewDataTrain(date_selected);
+  end;
+end;
+
+procedure TfrmMain.N9Click(Sender: TObject);
+begin
+  if GetIP() then
+  begin
+    frmExpQuant:=TfrmExpQuant.Create(nil);
+
+    frmExpQuant.Caption:='计量系统接口';
+    frmExpQuant.pnlTop.Caption:=frmExpQuant.Caption;
+
+    frmExpQuant.Update;
+    frmExpQuant.ShowModal;    
+  end
+  else
+  begin
+    Application.MessageBox('网络不可用，请检查网络！','提示',MB_OK+MB_ICONINFORMATION);
+    Exit;
+  end;
+end;
+
+procedure TfrmMain.printSetClick(Sender: TObject);
+var
+  S:tagPSD;
+begin
+  FillChar(S,sizeof(S),0);
+  s.lStructSize:=sizeof(S);
+  if PageSetupDlg(S) then
+  begin
+    Printer.Orientation:=poLandscape;
+  end
+  else
+  begin
+    Printer.Orientation:=poPortrait;
+  end;
+end;
+
+procedure TfrmMain.save15SClick(Sender: TObject);
+begin
+  pStationStr:=edt_pStation.Text;
+  CarGoStr:=edtCargo.Text;
+  OstationStr:=edtOstation.Text;
+  NoteStr:=Memo1.Lines.Text;
+
+  if (pStationStr='')or(CarGoStr='')or(OstationStr='')or(NoteStr='') then Exit;
+  SnStr:=DataSource_carNum.DataSet.FieldByName('seriary_number').AsString;
+  if SnStr='' then Exit;
+  //
+  DataModule_ado.modifyTrainOrd4(SnStr,pStationStr,CarGoStr,
+                                                OstationStr,NoteStr,date_selected);
+  //
+  DataModule_ado.viewDataTrain(date_selected); 
+end;
+
+procedure TfrmMain.save16UpClick(Sender: TObject);
+begin
+  pStationStr:=edt_pStation.Text;
+  CarGoStr:=edtCargo.Text;
+  OstationStr:=edtOstation.Text;
+  NoteStr:=Memo1.Lines.Text;
+  if (pStationStr='')or(CarGoStr='')or(OstationStr='')or(NoteStr='') then Exit;
+  if DataSource_carNum.DataSet.Bof then Exit;
+  while not DataSource_carNum.DataSet.Bof do
+  begin
+    SnStr:=DataSource_carNum.DataSet.FieldByName('seriary_number').AsString;
+    DataModule_ado.modifyTrainOrd4(SnStr,pStationStr,CarGoStr,
+                                                OstationStr,NoteStr,date_selected);
+    DataSource_carNum.DataSet.Prior;
+  end;
+  //
+  DataModule_ado.viewDataTrain(date_selected);
+end;
+
+procedure TfrmMain.save17DownClick(Sender: TObject);
+begin
+  pStationStr:=edt_pStation.Text;
+  CarGoStr:=edtCargo.Text;
+  OstationStr:=edtOstation.Text;
+  NoteStr:=Memo1.Lines.Text;
+  if (pStationStr='')or(CarGoStr='')or(OstationStr='')or(NoteStr='') then Exit;
+  if DataSource_carNum.DataSet.Eof then Exit;
+  while not DataSource_carNum.DataSet.Eof do
+  begin
+    SnStr:=DataSource_carNum.DataSet.FieldByName('seriary_number').AsString;
+    DataModule_ado.modifyTrainOrd4(SnStr,pStationStr,CarGoStr,
+                                                OstationStr,NoteStr,date_selected);
+    DataSource_carNum.DataSet.Next;
+  end;
+  //
+  DataModule_ado.viewDataTrain(date_selected); 
+end;
+
+end.
