@@ -157,7 +157,7 @@ object frmMain: TfrmMain
           Caption = #36135#29289#21517#31216#65306
         end
         object Label3: TLabel
-          Left = 359
+          Left = 399
           Top = 12
           Width = 39
           Height = 13
@@ -172,30 +172,6 @@ object frmMain: TfrmMain
           Anchors = [akRight, akBottom]
           Caption = #35760#20107#65306
         end
-        object edt_pStation: TEdit
-          Left = 76
-          Top = 8
-          Width = 154
-          Height = 21
-          Anchors = [akRight, akBottom]
-          TabOrder = 0
-        end
-        object edtCargo: TEdit
-          Left = 292
-          Top = 8
-          Width = 66
-          Height = 21
-          Anchors = [akRight, akBottom]
-          TabOrder = 1
-        end
-        object edtOstation: TEdit
-          Left = 390
-          Top = 8
-          Width = 154
-          Height = 21
-          Anchors = [akRight, akBottom]
-          TabOrder = 2
-        end
         object StaticText1: TStaticText
           Left = 0
           Top = 2
@@ -209,7 +185,7 @@ object frmMain: TfrmMain
           Font.Name = #23435#20307
           Font.Style = []
           ParentFont = False
-          TabOrder = 3
+          TabOrder = 0
         end
         object Memo1: TMemo
           Left = 581
@@ -218,6 +194,34 @@ object frmMain: TfrmMain
           Height = 28
           Anchors = [akRight, akBottom]
           ScrollBars = ssVertical
+          TabOrder = 1
+        end
+        object edt_pStation: TComboBox
+          Left = 80
+          Top = 8
+          Width = 145
+          Height = 21
+          BevelEdges = [beRight, beBottom]
+          Anchors = [akRight, akBottom]
+          ItemHeight = 13
+          TabOrder = 2
+        end
+        object edtCargo: TComboBox
+          Left = 296
+          Top = 8
+          Width = 97
+          Height = 21
+          Anchors = [akRight, akBottom]
+          ItemHeight = 13
+          TabOrder = 3
+        end
+        object edtOstation: TComboBox
+          Left = 432
+          Top = 8
+          Width = 113
+          Height = 21
+          Anchors = [akRight, akBottom]
+          ItemHeight = 13
           TabOrder = 4
         end
       end
@@ -298,6 +302,10 @@ object frmMain: TfrmMain
             Alignment = taCenter
             Expanded = False
             FieldName = 'ordMemo'
+            PickList.Strings = (
+              #20851
+              #31354#36710
+              #37325#36710)
             Title.Alignment = taCenter
             Title.Caption = #22791#27880
             Visible = True
@@ -390,6 +398,21 @@ object frmMain: TfrmMain
         Caption = #35774#32622#24310#26102#36153'(&S)'
         ImageIndex = 4
         OnClick = S1Click
+      end
+      object N10: TMenuItem
+        Caption = '-'
+      end
+      object pStaion11Set: TMenuItem
+        Caption = #21040#31449#35774#32622'(&P)'
+        OnClick = pStaion11SetClick
+      end
+      object O1stationSet: TMenuItem
+        Caption = #21457#31449#35774#32622'(&O)'
+        OnClick = O1stationSetClick
+      end
+      object place1Set: TMenuItem
+        Caption = #35013#21368#22320#28857'(&I)'
+        OnClick = place1SetClick
       end
       object N6: TMenuItem
         Caption = '-'

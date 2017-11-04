@@ -13,21 +13,22 @@ uses
   function dateTimePiece(dateComponentA,timeComponentA:TDateTimePicker):WideString;
   procedure operDir;
   procedure normGridColWidth(dbgridX:TDBGrid;widthInt:integer);
-  procedure addDictionary(adoDataSetX:TADODataSet;comboxX:TComboBox);
+  procedure addCmboxVal(adoDataSetX:TADODataSet;sqlStrA:WideString;comboxX:TComboBox);
   procedure treeADO(adoDataSetX:TADODataSet;tvTemplate1:TTreeView);
   procedure numberNode(TNode:TTreenode;tvTemplate2:TTreeView);
   procedure WriteheaderADO(adoDataSetX:TADODataSet;titlehead:string;
                                         ColWidthInt:Integer;tvTemplate3:TTreeView);
   procedure WriteExcelData(adoDataSetX:TADODataSet);
   procedure printGridData(DataSourceX:TDataSource;dbgridX:TDBGrid);
+  function GetCDPFileVersion(FileName:String):String;
   
 var
   Maxnum,childNum,DepthNum:Integer;
   curDir,excelDir:WideString;
   //
-  worksheet:olevariant;          //电子表格工作簿
-  workbook:olevariant;           //电子表格部分
-  myExcel:variant;               //电子表格对象
+  worksheet:olevariant;
+  workbook:olevariant;
+  myExcel:variant;               //ole object
 
 implementation
 
@@ -90,20 +91,20 @@ begin
 
 end;
 
-procedure addDictionary(adoDataSetX:TADODataSet;comboxX:TComboBox);
+procedure addCmboxVal(adoDataSetX:TADODataSet;sqlStrA:WideString;comboxX:TComboBox);
 var
-  dictStr:WideString;
+  valStr:WideString;
   recI2,i2:integer;
 begin
   adoDataSetX.Close;
-  adoDataSetX.CommandText:='select dictionary from breedSet';
+  adoDataSetX.CommandText:=sqlStrA;
   adoDataSetX.Open;
 
   recI2:=adoDataSetX.RecordCount;
   for i2:=0 to recI2-1 do
   begin
-    dictStr:=adoDataSetX.Fields[0].AsString;
-    comboxX.Items.Add(dictStr);
+    valStr:=adoDataSetX.Fields[0].AsString;
+    comboxX.Items.Add(valStr);
     adoDataSetX.Next;
   end;
 end;
@@ -583,6 +584,34 @@ begin
 
   end;//if end
 //
+end;
+//2007.4.8
+function GetCDPFileVersion(FileName:String):String;
+var
+  InfoSize,Wnd:DWORD;
+  VerBuf:Pointer;
+  VerInfo:^VS_FIXEDFILEINFO;
+begin
+    Result:='1.0.0.0';
+    InfoSize:=GetFileVersionInfoSize(PChar(FileName),Wnd);
+    if InfoSize<>0 then
+    begin
+      GetMem(VerBuf,InfoSize);
+      try
+        if GetFileVersionInfo(PChar(FileName),Wnd,InfoSize,VerBuf) then
+        begin
+          VerInfo:=nil;
+          VerQueryValue(VerBuf,'\',Pointer(VerInfo),Wnd);
+          if VerInfo<>nil then Result:=Format('%d.%d.%d.%d',[VerInfo^.dwFileVersionMS shr 16,
+                                                             VerInfo^.dwFileVersionMS and $0000ffff,
+                                                             VerInfo^.dwFileVersionLS shr 16,
+                                                             VerInfo^.dwFileVersionLS and $0000ffff]);
+        end;
+      finally
+        FreeMem(VerBuf,InfoSize);
+      end;
+
+    end;
 end;
 
 end.

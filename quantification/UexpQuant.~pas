@@ -22,10 +22,13 @@ type
     edtGroup: TEdit;
     cmbDI: TComboBox;
     Label2: TLabel;
+    PopupMenu1: TPopupMenu;
+    D1car: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure cmbSaveTimeChange(Sender: TObject);
     procedure btnExpQuantClick(Sender: TObject);
+    procedure D1carClick(Sender: TObject);
   private
     h1:THandle;
     connstrADO:WideString;
@@ -33,6 +36,8 @@ type
     { Private declarations }
   public
     operNameStr:WideString;
+    //
+    pTimeStr_cur:WideString;//2007.4.5
     { Public declarations }
   end;
 
@@ -54,8 +59,11 @@ procedure TfrmExpQuant.FormCreate(Sender: TObject);
 var
   operSqlStr3,saveTimeStr:WideString;
   i5,recDataCount:integer;
+  //2007.4.5
+  opersqlStr4:WideString;
+  i6,trainOrderRec:integer;
 begin
-  operSqlStr3:='select DISTINCT saveTime from stevedore';
+  operSqlStr3:='select DISTINCT past_time from trainOrder';
   recDataCount:=DataModule_ado.queryRecordCount(operSqlStr3);
   for i5:=0 to recDataCount-1 do
   begin
@@ -63,6 +71,16 @@ begin
     cmbSaveTime.Items.Append(saveTimeStr);
     DataModule_ado.ADOQuery_temp.Next;
   end;
+  //clear All tag-"Nexp"
+  opersqlStr4:='select * from trainOrder';
+  trainOrderRec:=DataModule_ado.queryRecordCount(opersqlStr4);
+  for i6:=0 to trainOrderRec-1 do
+  begin
+    DataModule_ado.clearQuanExpTag(' ');
+  end;
+  //
+  cmbSaveTime.ItemIndex:=cmbSaveTime.Items.Count-1;
+  pTimeStr_cur:=cmbSaveTime.Text;
 end;
 
 procedure TfrmExpQuant.FormShow(Sender: TObject);
@@ -71,14 +89,7 @@ var
   diStr:WideString;
   dayStr:WideString;
 begin
-  DataModule_ado.ADODataSet_stevedore.Close;
-  DataModule_ado.ADODataSet_stevedore.CommandText:='select car_breed AS 车种,'
-                +'car_number AS 车号,station AS 发到站,cargo_name AS 品名,'
-                +'past_time AS 调妥,entrant_time AS 装卸开始,finish_time AS 装卸完成,'
-                +'takeout_time AS 挂出'
-                +' from stevedore where stevedoreNO='
-                +IntToStr(DataModule_ado.maxStevedoreNO);
-  DataModule_ado.ADODataSet_stevedore.Open;
+  DataModule_ado.viewExpTrainOrd(pTimeStr_cur,' ');
 
   normGridColWidth(DBGrid1,120);
   try
@@ -91,20 +102,14 @@ begin
       DataModule_quantification.SQLClientDataSet_ghch.Next;
     end;
   except
-    Application.MessageBox('与系统断开，请重新连接！','hint',MB_OK);
-    frmExpQuant.Destroy;
+    Application.MessageBox('与计量系统断开，请重新连接！','hint',MB_OK);
+    Exit;
   end;
 end;
 
 procedure TfrmExpQuant.cmbSaveTimeChange(Sender: TObject);
 begin
-  DataModule_ado.ADODataSet_stevedore.Close;
-  DataModule_ado.ADODataSet_stevedore.CommandText:='select car_breed AS 车种,'
-                +'car_number AS 车号,station AS 发到站,cargo_name AS 品名,'
-                +'past_time AS 调妥,entrant_time AS 装卸开始,finish_time AS 装卸完成,'
-                +'takeout_time AS 挂出'                
-                +' from stevedore where saveTime='+''''+cmbSaveTime.Text+'''';
-  DataModule_ado.ADODataSet_stevedore.Open;
+  DataModule_ado.viewExpTrainOrd(cmbSaveTime.Text,' ');
 
   normGridColWidth(DBGrid1,120);
 end;
@@ -151,7 +156,9 @@ begin
   fcnFilePath1:=LeftStr(csvFilePath1,csvLen-4)+'.fcn';
   //
   colStr1:='seriary_number,car_number,past_time';
-  sqlStr2:='stevedore where saveTime='+''''+saveTimeStr+'''';
+  sqlStr2:='trainOrder where past_time='
+                        +''''+saveTimeStr+''''
+                        +' and quanExpTag='+''''+' '+'''';
   //export csv file
   operNameStr:=DataModule_ado.getOperatorName(operatorStr);
   if generalCSV(connstrADO,colStr1,sqlStr2,dragonItemStr,consistStr,operNameStr,csvFilePath1,
@@ -177,6 +184,13 @@ begin
     Application.MessageBox('导出失败!','Hint',MB_OK);
     Exit;
   end;  
+end;
+
+procedure TfrmExpQuant.D1carClick(Sender: TObject);
+begin
+  DataModule_ado.modifyQuanExpTag('Nexp',DataSource1.DataSet.Fields[0].AsString,
+                                        DataSource1.DataSet.Fields[1].AsString);
+  DataModule_ado.viewExpTrainOrd(cmbSaveTime.Text,' ');
 end;
 
 end.

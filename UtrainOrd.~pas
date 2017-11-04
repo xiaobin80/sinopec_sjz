@@ -58,7 +58,7 @@ type
     XPMenu1: TXPMenu;
     ImageList1: TImageList;
     Label6: TLabel;
-    edtPlace: TEdit;
+    edtPlace: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure t1WClick(Sender: TObject);
@@ -67,7 +67,6 @@ type
     procedure V1Click(Sender: TObject);
     procedure H1Click(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure cmbComposeChange(Sender: TObject);
     procedure t3UClick(Sender: TObject);
     procedure t4DClick(Sender: TObject);
@@ -77,6 +76,7 @@ type
     wsnStr,snStr:WideString;
     entrantDateTimeStr,finishDateTimeStr,takeOutDateTimeStr:WideString;
     //
+    nowTimeStr:WideString;
     //
     recInt_sb1:Integer;
     //
@@ -128,10 +128,15 @@ begin
 end;
 
 procedure TfrmTrainOrd.FormShow(Sender: TObject);
+var
+  sql1Str,sql2Str:WideString;
 begin
   //
   dbgridManagement;
-  addDictionary(DataModule_ado.ADODataSet_breed,cmbCompose);
+  sql1Str:='select dictionary from breedSet';
+  addCmboxVal(DataModule_ado.ADODataSet_breed,sql1Str,cmbCompose);
+  sql2Str:='select DISTINCT stevedorePlace from sPlace';
+  addCmboxVal(DataModule_ado.ADODataSet_breed,sql2Str,edtPlace);
   //
   dtp_dateEntrant.Date:=Now;
   dtp_dateFinish.Date:=Now;
@@ -162,8 +167,12 @@ procedure TfrmTrainOrd.t1WClick(Sender: TObject);
 begin
   snStr:= DataModule_ado.ADODataSet_2task.FieldByName('SN').AsString;
   if snStr='' then Exit;
-  DataModule_ado.addWPC_single(snStr,taskVal);
-  DataModule_ado.subtract2TaskTable(snStr,taskVal);
+  try
+    DataModule_ado.addWPC_single(snStr,taskVal);
+    DataModule_ado.subtract2TaskTable(snStr,taskVal);
+  except
+    Application.MessageBox('辆序被更改且与待处理区中的辆序冲突，请检查!','hint',MB_OK);
+  end;
 
   refreshData_trainOrd;
 end;
@@ -245,19 +254,6 @@ begin
   refreshData_trainOrd;
 end;
 
-procedure TfrmTrainOrd.FormCloseQuery(Sender: TObject;
-  var CanClose: Boolean);
-var
-  recI1:integer;
-begin
-  recI1:=DataModule_ado.getNullTime_2task(tableNameStrB);
-  if recI1<>0 then
-  begin
-    CanClose:=False;
-    Application.MessageBox('有"时间"数据空项，请检查！','hint',MB_OK);
-  end;
-end;
-
 procedure TfrmTrainOrd.cmbComposeChange(Sender: TObject);
 begin
   lbl_explanatory.Caption:=addExplanatory(DataModule_ado.ADODataSet_breed,cmbCompose.Text);
@@ -303,14 +299,31 @@ begin
   refreshData_trainOrd;
 end;
 
-procedure TfrmTrainOrd.FormClose(Sender: TObject;
-  var Action: TCloseAction);
+procedure TfrmTrainOrd.FormCloseQuery(Sender: TObject;
+  var CanClose: Boolean);
+var
+  recI1:integer;
 begin
-  //save 2task
-  DataModule_ado.save2task(tableNameStrB,DateTimeToStr(Now),IntToStr(DataModule_ado.maxBatchNO2task(tableNameStrB)));
-  refreshData_trainOrd;
+  recI1:=DataModule_ado.getNullTime_2task(tableNameStrB);
+  if recI1<>0 then
+  begin
+    CanClose:=False;
+    Application.MessageBox('有"时间"数据空项，请检查！','hint',MB_OK);
+    Exit;
+  end;
+  //close
+  nowTimeStr:=DateTimeToStr(Now);
   //save stevedore
-  DataModule_ado.addStevedore(DataModule_ado.ADODataSet_2task,taskVal);
+  if DataModule_ado.getSeriary_number('wpc')>0 then
+  begin
+    CanClose:=False;
+    Application.MessageBox('"辆序"有重复，请检查！','hint',MB_OK);
+    Exit;
+  end;
+  DataModule_ado.addStevedore(DataModule_ado.ADODataSet_2task,nowTimeStr,taskVal);
+  //save 2task
+  DataModule_ado.save2task(tableNameStrB,nowTimeStr,
+                        IntToStr(DataModule_ado.maxBatchNO2task(tableNameStrB)));  
 end;
 
 end.

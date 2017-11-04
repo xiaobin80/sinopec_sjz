@@ -57,11 +57,8 @@ type
     Bevel1: TBevel;
     Bevel2: TBevel;
     Label1: TLabel;
-    edt_pStation: TEdit;
     Label2: TLabel;
-    edtCargo: TEdit;
     Label3: TLabel;
-    edtOstation: TEdit;
     StaticText1: TStaticText;
     Label4: TLabel;
     Memo1: TMemo;
@@ -69,6 +66,13 @@ type
     N15: TMenuItem;
     save16Up: TMenuItem;
     save17Down: TMenuItem;
+    edt_pStation: TComboBox;
+    edtCargo: TComboBox;
+    edtOstation: TComboBox;
+    N10: TMenuItem;
+    pStaion11Set: TMenuItem;
+    O1stationSet: TMenuItem;
+    place1Set: TMenuItem;
     procedure N1Click(Sender: TObject);
     procedure A1Click(Sender: TObject);
     procedure Q1Click(Sender: TObject);
@@ -90,6 +94,9 @@ type
     procedure save15SClick(Sender: TObject);
     procedure save16UpClick(Sender: TObject);
     procedure save17DownClick(Sender: TObject);
+    procedure pStaion11SetClick(Sender: TObject);
+    procedure O1stationSetClick(Sender: TObject);
+    procedure place1SetClick(Sender: TObject);
   private
     x1,y1:integer;
     logStr:WideString;
@@ -99,9 +106,13 @@ type
     recordCount_oper:Integer;
     //
     sqlStr_load,sqlStr_unload:WideString;
+    sqlStr_oper:WideString;//2007.4.8
     //
     SnStr,pStationStr,CarGoStr,OstationStr,NoteStr:WideString;
+    //2007.4.6
+    sqlPublicSetStr:WideString;
     //
+    procedure fillSpaceChar(charStr:WideString);
     procedure appAgent(sender:TObject);
     { Private declarations }
   public
@@ -130,7 +141,7 @@ var
 implementation
 uses
   UqueryType,UqueryDate,UtrainOrd,UtrainBlend,Ustevedore,u_passet,u_about,
-  UexpQuant,Uquantification,Ulog,UcarKind,Ubreed,UDataModule_ado;
+  UexpQuant,Uquantification,Ulog,UpublicSet,Ubreed,UDataModule_ado;
 
   {$R *.dfm}
 
@@ -269,8 +280,8 @@ begin
           DataModule_ado.addWPC_more(date_selected);//add waitProcess
           DataModule_ado.subtractTrainOrder(date_selected); //sub trainOrder
           // load&unload
-          DataModule_ado.viewTask_load('wpc','0');
-          DataModule_ado.viewTask_unload('wpc','0');
+          DataModule_ado.viewTask_load('wpc');
+          DataModule_ado.viewTask_unload('wpc');
           //
           DataModule_ado.viewTask_watiProcess(date_selected);
           callBlenForm(date_selected);
@@ -310,7 +321,7 @@ begin
   //1: have authority
   if managerBool then
   begin
-    recordCount_oper:=DataModule_ado.queryNormalOperatorCount; 
+    recordCount_oper:=DataModule_ado.queryRecordCount(sqlStr_oper); 
     for i5:=0 to recordCount_oper-1 do
     begin
       normalOper:=DataModule_ado.ADOQuery_temp.Fields[0].Text;
@@ -352,7 +363,7 @@ begin
     frame1.addMemoLog(logStr);
     frmLog.pnlTop.Caption:='日志纪录';
     //
-    recordCount_oper:=DataModule_ado.queryNormalOperatorCount;    
+    recordCount_oper:=DataModule_ado.queryRecordCount(sqlStr_oper);
     for i4:=0 to recordCount_oper-1 do
     begin
       normalOper:=DataModule_ado.ADOQuery_temp.Fields[0].Text;
@@ -387,7 +398,7 @@ begin
       frame1.addMemoLog(n4.Caption);
       frmQueryDate.Update;
       frmQueryDate.ShowModal;
-      //进行查询处理
+      //query processing
     finally
       frmQueryDate.Free;
     end;
@@ -398,22 +409,103 @@ begin
     Exit;
   end;
 end;
-
+//2007.4.6 add use public windows
 procedure TfrmMain.C1Click(Sender: TObject);
 begin
   if managerBool then
   begin
-    frmCarKind:=TfrmCarKind.Create(nil);
+    frmPulicSet:=TfrmPulicSet.Create(nil);
     logStr:='车种设置';
-    frmCarKind.Caption:=logStr;
+    frmPulicSet.Caption:=logStr;
     frame1.addMemoLog(logStr);
-    frmCarKind.pnlTop.Caption:=logStr;
-    frmCarKind.Update;
-    frmCarKind.ShowModal;
+    frmPulicSet.pnlTop.Caption:=logStr;
+    //show
+    sqlPublicSetStr:='select car_kind AS 车种名称,initial AS 车种简称 from carKind';
+    DataModule_ado.viewPublicSet(sqlPublicSetStr);
+
+    frmPulicSet.DBGrid1.Hint:='车种简称不允许重复，英文字母必须大写！';
+    //
+    frmPulicSet.Update;
+    frmPulicSet.ShowModal;
   end
   else
   begin
     Application.MessageBox('没有管理员权限不能进行车种设置!','hint',MB_OK);
+    Exit;
+  end;
+end;
+
+procedure TfrmMain.pStaion11SetClick(Sender: TObject);
+begin
+  if managerBool then
+  begin
+    frmPulicSet:=TfrmPulicSet.Create(nil);
+    logStr:='到站设置';
+    frmPulicSet.Caption:=logStr;
+    frame1.addMemoLog(logStr);
+    frmPulicSet.pnlTop.Caption:=logStr;
+    //show
+    sqlPublicSetStr:='select pastStation AS 到站名称,initial AS 到站简称 from pStation';
+    DataModule_ado.viewPublicSet(sqlPublicSetStr);
+
+    frmPulicSet.DBGrid1.Hint:='到站简称不允许重复，英文字母必须大写！';
+    //
+    frmPulicSet.Update;
+    frmPulicSet.ShowModal;
+  end
+  else
+  begin
+    Application.MessageBox('没有管理员权限不能进行到站设置!','hint',MB_OK);
+    Exit;
+  end;
+end;
+
+procedure TfrmMain.O1stationSetClick(Sender: TObject);
+begin
+  if managerBool then
+  begin
+    frmPulicSet:=TfrmPulicSet.Create(nil);
+    logStr:='发站设置';
+    frmPulicSet.Caption:=logStr;
+    frame1.addMemoLog(logStr);
+    frmPulicSet.pnlTop.Caption:=logStr;
+    //show
+    sqlPublicSetStr:='select originalStation AS 发站名称,initial AS 发站简称 from oStation';
+    DataModule_ado.viewPublicSet(sqlPublicSetStr);
+
+    frmPulicSet.DBGrid1.Hint:='发站简称不允许重复，英文字母必须大写！';
+    //
+    frmPulicSet.Update;
+    frmPulicSet.ShowModal;
+  end
+  else
+  begin
+    Application.MessageBox('没有管理员权限不能进行发站设置!','hint',MB_OK);
+    Exit;
+  end;
+end;
+
+procedure TfrmMain.place1SetClick(Sender: TObject);
+begin
+  if managerBool then
+  begin
+    frmPulicSet:=TfrmPulicSet.Create(nil);
+    logStr:='装卸地点设置';
+    frmPulicSet.Caption:=logStr;
+    frame1.addMemoLog(logStr);
+    frmPulicSet.pnlTop.Caption:=logStr;
+    //show
+    sqlPublicSetStr:='select stevedorePlace AS 装卸地点,initial AS 地点简称 from sPlace';
+    DataModule_ado.viewPublicSet(sqlPublicSetStr);
+
+    frmPulicSet.DBGrid1.Hint:='地点简称不允许重复，英文字母必须大写！';
+    //
+    frmPulicSet.Update;
+    frmPulicSet.ShowModal;
+  end
+  else
+  begin
+    Application.MessageBox('没有管理员权限不能进行装卸地点设置!','hint',MB_OK);
     Exit;
   end;
 end;
@@ -487,7 +579,9 @@ begin
   sqlStr_unload:='seriary_number AS 顺序,cargo_name AS 品名,car_number AS 车号,unloadMemo AS 备注,'
         +'send_station AS 发站,unload_place AS 卸车地点,entrant_time AS 送入时间,'
         +'finish_time AS 卸完时间,takeout_time AS 取出时间,unload_notepad AS 记事,'
-        +'SN,past_time,saveTime,car_breed,dictionary';  
+        +'SN,past_time,saveTime,car_breed,dictionary';
+
+  sqlStr_oper:='select OperID from operator where tag=false order by OperID';
   //application hint
   Application.OnHint:=appAgent;
   //log show
@@ -537,6 +631,16 @@ begin
   except
     Exit;
   end;
+  //Init comboBox
+  //pStation
+  operSqlStr1:='select DISTINCT pastStation from pStation';
+  addCmboxVal(DataModule_ado.ADODataSet_publicSet,operSqlStr1,edt_pStation);
+  //oStation
+  operSqlStr1:='select DISTINCT originalStation from oStation';
+  addCmboxVal(DataModule_ado.ADODataSet_publicSet,operSqlStr1,edtOstation);
+  //cargo
+  operSqlStr1:='select DISTINCT breedName from breedSet';
+  addCmboxVal(DataModule_ado.ADODataSet_publicSet,operSqlStr1,edtCargo);  
   //add log
   logStr:='登录系统';
   frame1.addMemoLog(logStr);
@@ -583,6 +687,8 @@ procedure TfrmMain.EXCELE1Click(Sender: TObject);
 var
  colnum,slnum,i:integer;
  headstr:string;
+ //2007.4.5
+ headTitStr:WideString;
 begin
   if DataSource_carNum.DataSet.RecordCount=0 then Exit;
   //
@@ -618,10 +724,27 @@ begin
                                                         MB_OK + MB_ICONINFORMATION);
     exit;
   end;
-  WriteheaderADO(DataModule_ado.ADODataSet_Excel,pnlLog.Caption,9,TreeView1);
+
+  headTitStr:='到达时间:'+date_selected;
+
+  WriteheaderADO(DataModule_ado.ADODataSet_Excel,headTitStr,8,TreeView1);
   WriteExcelData(DataModule_ado.ADODataSet_Excel);
-  //页脚设置
-  myexcel.activesheet.pagesetup.centerfooter:='第&P页';
+  //restriction row height
+  myexcel.activesheet.range['A2:I'
+                +IntToStr(DataModule_ado.ADODataSet_Excel.RecordCount+2)].RowHeight:=12;
+  //page brow set
+  myexcel.activesheet.pagesetup.CenterHeader:='&B '+pnlLog.Caption+' &14';
+  myexcel.activesheet.pagesetup.HeaderMargin:=0.8;
+  myexcel.activesheet.pagesetup.TopMargin:=42;
+  //title set
+  myexcel.activesheet.Range['A1:I1'].Font.Size:=10;
+  myexcel.activesheet.Range['A1:I1'].Font.FontStyle:='常规';
+  myexcel.activesheet.Range['A1:I1'].HorizontalAlignment:=$FFFFEFC8;//xlRight
+
+  //page foot set
+  //myExcel.activesheet.pagesetup.BottomMargin:=0.78;
+  //myexcel.activesheet.pagesetup.centerfooter:='第&P页';
+  myexcel.activesheet.pagesetup.leftfooter:='检查者:';
   //
   worksheet.saveAs(excelDir+'\'+dateTimeStrFull+'lcbzsx.xls');
   //workbook.close;
@@ -678,6 +801,14 @@ begin
     Printer.Orientation:=poPortrait;
   end;
 end;
+//2007.4.5
+procedure TfrmMain.fillSpaceChar(charStr:WideString);
+begin
+  if pStationStr='' then pStationStr:=charStr;
+  if CarGoStr='' then CarGoStr:=charStr;
+  if OstationStr='' then OstationStr:=charStr;
+  if NoteStr='' then NoteStr:=charStr;
+end;
 
 procedure TfrmMain.save15SClick(Sender: TObject);
 begin
@@ -686,7 +817,7 @@ begin
   OstationStr:=edtOstation.Text;
   NoteStr:=Memo1.Lines.Text;
 
-  if (pStationStr='')or(CarGoStr='')or(OstationStr='')or(NoteStr='') then Exit;
+  if (pStationStr='')or(CarGoStr='')or(OstationStr='')or(NoteStr='') then fillSpaceChar(' ');
   SnStr:=DataSource_carNum.DataSet.FieldByName('seriary_number').AsString;
   if SnStr='' then Exit;
   //
@@ -702,7 +833,7 @@ begin
   CarGoStr:=edtCargo.Text;
   OstationStr:=edtOstation.Text;
   NoteStr:=Memo1.Lines.Text;
-  if (pStationStr='')or(CarGoStr='')or(OstationStr='')or(NoteStr='') then Exit;
+  if (pStationStr='')or(CarGoStr='')or(OstationStr='')or(NoteStr='') then fillSpaceChar(' ');
   if DataSource_carNum.DataSet.Bof then Exit;
   while not DataSource_carNum.DataSet.Bof do
   begin
@@ -721,7 +852,7 @@ begin
   CarGoStr:=edtCargo.Text;
   OstationStr:=edtOstation.Text;
   NoteStr:=Memo1.Lines.Text;
-  if (pStationStr='')or(CarGoStr='')or(OstationStr='')or(NoteStr='') then Exit;
+  if (pStationStr='')or(CarGoStr='')or(OstationStr='')or(NoteStr='') then fillSpaceChar(' ');
   if DataSource_carNum.DataSet.Eof then Exit;
   while not DataSource_carNum.DataSet.Eof do
   begin

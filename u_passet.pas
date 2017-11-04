@@ -75,13 +75,13 @@ begin
       else
       begin
         ndUid:=1000;
+        CheckBox_tag.Checked:=False;
       end;
     end;
     cmbUID.Items.Append(IntToStr(ndUid+1));
     cmbICount:=cmbUID.Items.Count;
     cmbUID.ItemIndex:=cmbICount-1 ;
     //
-    CheckBox_tag.Checked:=False;
     newAddFlag:=False;
     clickAddFlag:=True;
   end

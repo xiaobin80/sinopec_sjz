@@ -66,7 +66,7 @@ AutoIncBuild=1
 MajorVer=5
 MinorVer=0
 Release=3
-Build=943
+Build=1087
 Debug=0
 PreRelease=0
 Special=0
@@ -77,7 +77,7 @@ CodePage=936
 [Version Info Keys]
 CompanyName=威克公司
 FileDescription=车号数据处理
-FileVersion=5.0.3.943
+FileVersion=5.0.3.1087
 InternalName=CPS Extend
 LegalCopyright=哈尔滨威克科技股份有限公司
 LegalTrademarks=

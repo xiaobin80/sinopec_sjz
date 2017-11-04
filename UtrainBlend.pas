@@ -72,7 +72,7 @@ type
     dtp_timeFinish: TDateTimePicker;
     dtp_dateTakeout: TDateTimePicker;
     dtp_timeTakeout: TDateTimePicker;
-    edtPlace: TEdit;
+    edtPlace: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure l1WClick(Sender: TObject);
@@ -93,12 +93,11 @@ type
     procedure Au2UClick(Sender: TObject);
     procedure Au3DClick(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     lsnStr,usnStr,wsnStr:WideString;
     entrantDateTimeStr,finishDateTimeStr,takeOutDateTimeStr:WideString;
     //
-    nowStr1,nowStr:WideString;
+    nowStr1,nowTimeStr:WideString;
     nowInt:Integer;
     //
     maxBNO_load,maxBNO_unload:integer;
@@ -167,9 +166,14 @@ begin
 end;
 
 procedure TfrmTrainBlend.FormShow(Sender: TObject);
+var
+  sql1Str,sql2Str:WideString;
 begin
   dbgridManagement;
-  addDictionary(DataModule_ado.ADODataSet_breed,cmbCompose);
+  sql1Str:='select dictionary from breedSet';
+  addCmboxVal(DataModule_ado.ADODataSet_breed,sql1Str,cmbCompose);
+  sql2Str:='select DISTINCT stevedorePlace from sPlace';
+  addCmboxVal(DataModule_ado.ADODataSet_breed,sql2Str,edtPlace);
   //
   dtp_dateEntrant.Date:=Now;
   dtp_dateFinish.Date:=Now;
@@ -185,12 +189,9 @@ end;
 procedure TfrmTrainBlend.refreshData_trainBlend;
 begin
   //Refresh data
-  DataModule_ado.ADODataSet_load.Close;
-  DataModule_ado.ADODataSet_load.Open;
-  DataModule_ado.ADODataSet_unload.Close;
-  DataModule_ado.ADODataSet_unload.Open;
-  DataModule_ado.ADODataSet_waitProcess.Close;
-  DataModule_ado.ADODataSet_waitProcess.Open;
+  DataModule_ado.viewTask_load('wpc');
+  DataModule_ado.viewTask_unload('wpc');
+  DataModule_ado.viewTask_watiProcess(pnlOrd.Caption);
   //
   dbgridManagement;
 end;
@@ -199,9 +200,13 @@ procedure TfrmTrainBlend.l1WClick(Sender: TObject);
 begin
   lsnStr:=DataModule_ado.ADODataSet_load.FieldByName('SN').AsString;
   if lsnStr='' then Exit;
-  DataModule_ado.addWPC_single(lsnStr,1);
+  try
+    DataModule_ado.addWPC_single(lsnStr,1);
 
-  DataModule_ado.subtract2TaskTable(lsnStr,1);
+    DataModule_ado.subtract2TaskTable(lsnStr,1);
+  except
+    Application.MessageBox('辆序被更改且与待处理区中的辆序冲突，请检查!','hint',MB_OK);
+  end;
   refreshData_trainBlend;
 end;
 
@@ -209,9 +214,13 @@ procedure TfrmTrainBlend.u1WClick(Sender: TObject);
 begin
   usnStr:=DataModule_ado.ADODataSet_unload.FieldByName('SN').AsString;
   if usnStr='' then Exit;
-  DataModule_ado.addWPC_single(usnStr,2);
+  try
+    DataModule_ado.addWPC_single(usnStr,2);
 
-  DataModule_ado.subtract2TaskTable(usnStr,2);
+    DataModule_ado.subtract2TaskTable(usnStr,2);
+  except
+    Application.MessageBox('辆序被更改且与待处理区中的辆序冲突，请检查!','hint',MB_OK);
+  end;
   refreshData_trainBlend;
 end;
 //load_car
@@ -374,17 +383,15 @@ end;
 procedure TfrmTrainBlend.viewClick(Sender: TObject);
 begin
   DataModule_ado.viewTask_allWPC;
-  sbTrain.SimpleText:=IntToStr(recInt_sb1)+' 条数据';  
-  //
-  refreshData_trainBlend;
+  sbTrain.SimpleText:=IntToStr(recInt_sb1)+' 条数据';
+  normGridColWidth(DBGridWaitProcess,80);
 end;
 
 procedure TfrmTrainBlend.hiddenClick(Sender: TObject);
 begin
   DataModule_ado.viewTask_watiProcess(pnlOrd.Caption);
   sbTrain.SimpleText:=IntToStr(recInt_sb1)+' 条数据';
-  //
-  refreshData_trainBlend;
+  normGridColWidth(DBGridWaitProcess,80);
 end;
 
 procedure TfrmTrainBlend.cmbComposeChange(Sender: TObject);
@@ -498,6 +505,8 @@ procedure TfrmTrainBlend.FormCloseQuery(Sender: TObject;
   var CanClose: Boolean);
 var
   recI1,recI2:integer;
+  //
+  i1:integer;
 begin
   recI1:=DataModule_ado.getNullTime_2task('load_car');
   recI2:=DataModule_ado.getNullTime_2task('unload_car');
@@ -506,36 +515,39 @@ begin
   begin
     CanClose:=False;
     Application.MessageBox('有"时间"数据空项，请检查！','hint',MB_OK);
+    Exit;
   end;
-end;
-
-procedure TfrmTrainBlend.FormClose(Sender: TObject;
-  var Action: TCloseAction);
-begin
   //
   Randomize;
   while randInt<10 do
   begin
     randInt:=Random(59);
   end;
-  //
+  //close
   nowStr1:=DateTimeToStr(Now);
   nowInt:=length(nowStr1);
-  nowStr:=LeftStr(nowStr1,nowInt-3)+':'+IntToStr(randInt);
+  nowTimeStr:=LeftStr(nowStr1,nowInt-3)+':'+IntToStr(randInt);
+  //2007.4.8
+  i1:=DataModule_ado.getSeriary_number('wpc');
+  if i1>0 then
+  begin
+    CanClose:=False;
+    Application.MessageBox('"辆序"有重复，请检查！','hint',MB_OK);
+    Exit;
+  end;
+  //
   if postFlag1 then
   begin
-    //save 2task
-    DataModule_ado.save2taskBlend('load_car',nowStr,'wpc','L');
-    DataModule_ado.viewTask_load('L',IntToStr(maxBNO_load));
     //save stevedore
-    DataModule_ado.addStevedore(DataModule_ado.ADODataSet_load,3);
+    DataModule_ado.addStevedore(DataModule_ado.ADODataSet_load,nowTimeStr,3);
+    //save 2task
+    DataModule_ado.save2taskBlend('load_car',nowTimeStr,'wpc','L');
   end;
   if postFlag2 then
   begin
-    DataModule_ado.save2taskBlend('unload_car',nowStr,'wpc','U');
-    DataModule_ado.viewTask_unload('U',IntToStr(maxBNO_unload));
-    DataModule_ado.addStevedore(DataModule_ado.ADODataSet_unload,3);
-  end;
+    DataModule_ado.addStevedore(DataModule_ado.ADODataSet_unload,nowTimeStr,3);
+    DataModule_ado.save2taskBlend('unload_car',nowTimeStr,'wpc','U');
+  end;  
 end;
 
 end.

@@ -9,7 +9,8 @@ var
 
 function generalCSV(ADOconnectString,ColName,TableName1,
                         dragonIDStrA,consistStrA,operStrA,
-                        ExprotFileName1,wTimeStrA:WideString;ColCount:integer):Boolean;
+                        ExprotFileName1,wTimeStrA:WideString;
+                        ColCount:integer):Boolean;
 
 implementation
 uses
@@ -18,7 +19,8 @@ uses
 
 function generalCSV(ADOconnectString,ColName,TableName1,
                         dragonIDStrA,consistStrA,operStrA,
-                        ExprotFileName1,wTimeStrA:WideString;ColCount:integer):Boolean;
+                        ExprotFileName1,wTimeStrA:WideString;
+                        ColCount:integer):Boolean;
 var
   ADOConnectX:TADOConnection;
   ADOQueryX:TADOQuery;
@@ -65,8 +67,8 @@ begin
     carNumStr:=ADOQueryX.Fields[1].AsString;
     pTimeStr:=ADOQueryX.Fields[2].AsString;
     try
-      DataModule_quantification.addGHCH_ORA(dragonIDStrA,consistStrA,snStr,
-                                        carNumStr,pTimeStr,wTimeStrA,operStrA);
+      {DataModule_quantification.addGHCH_ORA(dragonIDStrA,consistStrA,snStr,
+                                        carNumStr,pTimeStr,wTimeStrA,operStrA);}
     except
 
     end;

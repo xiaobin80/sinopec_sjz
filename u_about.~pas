@@ -4,31 +4,28 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, jpeg, ExtCtrls;
+  Dialogs, StdCtrls, Buttons, jpeg, ExtCtrls, ShellApi;
 
 type
   Tfrm_about = class(TForm)
-    im_about: TImage;
-    im_bout02: TImage;
     mo_about: TMemo;
-    BitBtn_about: TBitBtn;
     Label7: TLabel;
     Label8: TLabel;
     Label5: TLabel;
     Label6: TLabel;
     Label9: TLabel;
     Label10: TLabel;
-    StaticText8: TStaticText;
-    StaticText9: TStaticText;
-    StaticText10: TStaticText;
-    StaticText11: TStaticText;
-    Label4: TLabel;
-    procedure BitBtn_aboutClick(Sender: TObject);
-    procedure Label4Click(Sender: TObject);
+    Image1: TImage;
+    Label2: TLabel;
+    StaticText1: TStaticText;
+    StaticText2: TStaticText;
+    Label1: TLabel;
     procedure Label10Click(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
     { Private declarations }
   public
+    verStr:string;
     { Public declarations }
   end;
 
@@ -36,29 +33,9 @@ var
   frm_about: Tfrm_about;
 
 implementation
-
+uses
+  UpublicFunc;
 {$R *.dfm}
-
-procedure Tfrm_about.BitBtn_aboutClick(Sender: TObject);
-begin
-  frm_about.Close;
-end;
-
-procedure Tfrm_about.Label4Click(Sender: TObject);
-begin
-  StaticText8.Visible:=False;
-  StaticText9.Visible:=False;
-  StaticText10.Visible:=False;
-  StaticText11.Visible:=False;
-  Label7.Visible:=False;
-  Label8.Visible:=False;
-  Label5.Visible:=False;
-  Label6.Visible:=False;
-  Label9.Visible:=False;
-  Label10.Visible:=False;
-  Label4.Visible:=False;
-  im_bout02.Visible:=True;
-end;
 
 procedure Tfrm_about.Label10Click(Sender: TObject);
 begin
@@ -69,6 +46,14 @@ begin
 				 nil,
 				 nil,
 				 SW_SHOWNORMAL);
+end;
+
+procedure Tfrm_about.FormShow(Sender: TObject);
+begin
+  verStr:=GetCDPFileVersion(ExtractFilePath(ParamStr(0))+'CDP_x5.exe');
+  mo_about.Lines.Append(#13);
+  mo_about.Lines.Append('Ö÷³ÌÐò°æ±¾ºÅ:');
+  mo_about.Lines.Add('             '+verStr);
 end;
 
 end.

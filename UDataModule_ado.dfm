@@ -64,6 +64,7 @@ object DataModule_ado: TDataModule_ado
   end
   object ADODataSet_load: TADODataSet
     Connection = adoConnMain
+    OnPostError = ADODataSet_loadPostError
     Parameters = <>
     Left = 480
     Top = 8
@@ -76,6 +77,7 @@ object DataModule_ado: TDataModule_ado
   end
   object ADODataSet_2task: TADODataSet
     Connection = adoConnMain
+    OnPostError = ADODataSet_2taskPostError
     Parameters = <>
     Left = 368
     Top = 176
@@ -88,6 +90,7 @@ object DataModule_ado: TDataModule_ado
   end
   object ADODataSet_unload: TADODataSet
     Connection = adoConnMain
+    OnPostError = ADODataSet_unloadPostError
     Parameters = <>
     Left = 480
     Top = 72
@@ -109,5 +112,11 @@ object DataModule_ado: TDataModule_ado
     Parameters = <>
     Left = 616
     Top = 128
+  end
+  object ADODataSet_publicSet: TADODataSet
+    Connection = adoConnMain
+    Parameters = <>
+    Left = 504
+    Top = 248
   end
 end

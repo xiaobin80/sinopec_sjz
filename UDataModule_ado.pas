@@ -25,8 +25,15 @@ type
     ADODataSet_getTrainData: TADODataSet;
     ADODataSet_get2TaskData: TADODataSet;
     ADODataSet_WPCprocess: TADODataSet;
+    ADODataSet_publicSet: TADODataSet;
     procedure DataModuleCreate(Sender: TObject);
     procedure DataModuleDestroy(Sender: TObject);
+    procedure ADODataSet_loadPostError(DataSet: TDataSet;
+      E: EDatabaseError; var Action: TDataAction);
+    procedure ADODataSet_unloadPostError(DataSet: TDataSet;
+      E: EDatabaseError; var Action: TDataAction);
+    procedure ADODataSet_2taskPostError(DataSet: TDataSet;
+      E: EDatabaseError; var Action: TDataAction);
   private
     currentDir1:WideString;
     xbfini:TIniFile;
@@ -38,7 +45,7 @@ type
     DBconnect:WideString;
     //
     function clearExportExcelTable(tableNameStrA:WideString):Boolean;
-    function queryNormalOperatorCount:Integer;
+    function clearQuanExpTag(quanExpTagStrA:WideString):Boolean;
     function queryRecordCount(sqlStr:WideString):Integer;
     function queryRecCo2task(tableNameStrA,maxBatchNOStrA:WideString):Integer;
     function queryRecCo2taskBlend(tableNameStrA,WPCFlagStrA:WideString):Integer;
@@ -48,14 +55,17 @@ type
     function getFreeTime(dictionaryStrA:WideString):Double;
     function getUnivalent(dictionaryStrA:WideString):Double;
     function getTaskType(saveTimeStrA:WideString):Integer;
+    function getSeriary_number(WPCFlagStrA:WideString):Integer;//2007.4.8
     function extractExcelData_load(saveTimeStrA:WideString):Boolean;
     function extractExcelData_unload(saveTimeStrA:WideString):Boolean;
     function viewDataTrain(time_rportStr:WideString):Integer;
     function view2task(tableNameStr,sqlStrA,time_rportstrA:WideString):Integer;
-    function viewTask_load(WPCFlagStrA,maxBNOStrA:WideString):Integer;
-    function viewTask_unload(WPCFlagStrA,maxBNOStrA:WideString):Integer;
+    function viewTask_load(WPCFlagStrA:WideString):Integer;
+    function viewTask_unload(WPCFlagStrA:WideString):Integer;
     function viewTask_watiProcess(time_rportstrA:WideString):Integer;
     function viewTask_allWPC:Integer;
+    function viewPublicSet(sqlStrA:WideString):Integer;
+    function viewExpTrainOrd(pTimeStrA,quanExpTagStrA:WideString):Integer;//2007.4.5
     function compareTrain2car_number:Boolean;
     function maxCar_number:integer;
     function maxTrainTotalH:Integer;
@@ -67,7 +77,7 @@ type
     function addCar_nmuber(trian_number:integer):Boolean;
     function add2Task_more(past_timeStrA:WideString;taskType:Integer):Boolean;
     function addWPC_more(past_timeStrA:WideString):Boolean;
-    function addStevedore(adoDataSetX:TADODataSet;tagI:Integer):Boolean;
+    function addStevedore(adoDataSetX:TADODataSet;saveTimeStrA:WideString;tagI:Integer):Boolean;
     function addWPC_single(snStrA:WideString;taskType:Integer):Boolean;
     function subtractTrainOrder(past_timeStrA:WideString):Boolean;
     function subtract2TaskTable(snStrA:WideString;taskType:Integer):Boolean;
@@ -88,6 +98,8 @@ type
                             entrant_timeStrA,finish_timeStrA,takeout_timeStrA,
                             placeStrA,dictionaryStrA:WideString;
                             maxBatchNOInt,taskType:Integer):Boolean;
+    //2007.4.5
+    function modifyQuanExpTag(ExpTagStrA,tNumStrA,sNumStrA:WideString):Boolean;
     { Public declarations }
   end;
 
@@ -116,6 +128,17 @@ begin
 
   Result:=True;
 end;
+
+function TDataModule_ado.clearQuanExpTag(quanExpTagStrA:WideString):Boolean;
+begin
+  ADOQuery_temp.Close;
+  ADOQuery_temp.SQL.Clear;
+  ADOQuery_temp.SQL.Text:='UPDATE trainOrder set quanExpTag='
+                        +''''+quanExpTagStrA+'''';
+  ADOQuery_temp.ExecSQL;
+
+  Result:=True;
+end;
 //exprot
 function TDataModule_ado.exprotExcel_stevedore(saveTimeStr:WideString;taskTagI:Integer):Boolean;
 begin
@@ -131,8 +154,8 @@ begin
                               +'LC.load_notepad AS [装车作业_记事],'
                               +'ULC.seriary_number AS [卸车作业_顺序],ULC.cargo_name AS [卸车作业_品名],'
                               +'ULC.car_number AS [卸车作业_车号],ULC.unloadMemo AS [卸车作业_备注],'
-                              +'ULC.send_station AS [卸车作业_到站],ULC.unload_place AS [卸车作业_装车地点],'
-                              +'ULC.entrant_time AS [卸车作业_送入时间],ULC.finish_time AS [卸车作业_装完时间],'
+                              +'ULC.send_station AS [卸车作业_到站],ULC.unload_place AS [卸车作业_卸车地点],'
+                              +'ULC.entrant_time AS [卸车作业_送入时间],ULC.finish_time AS [卸车作业_卸完时间],'
                               +'ULC.takeout_time AS [卸车作业_取出时间],ULC.unload_notepad AS [卸车作业_记事]'
                               +' from load_car LC LEFT OUTER JOIN unload_car ULC ON LC.saveTime=ULC.saveTime'
                               +' where LC.saveTime='+''''+saveTimeStr+''''
@@ -151,8 +174,8 @@ begin
                               +'LC.load_notepad AS [装车作业_记事],'
                               +'ULC.seriary_number AS [卸车作业_顺序],ULC.cargo_name AS [卸车作业_品名],'
                               +'ULC.car_number AS [卸车作业_车号],ULC.unloadMemo AS [卸车作业_备注],'
-                              +'ULC.send_station AS [卸车作业_到站],ULC.unload_place AS [卸车作业_装车地点],'
-                              +'ULC.entrant_time AS [卸车作业_送入时间],ULC.finish_time AS [卸车作业_装完时间],'
+                              +'ULC.send_station AS [卸车作业_到站],ULC.unload_place AS [卸车作业_卸车地点],'
+                              +'ULC.entrant_time AS [卸车作业_送入时间],ULC.finish_time AS [卸车作业_卸完时间],'
                               +'ULC.takeout_time AS [卸车作业_取出时间],ULC.unload_notepad AS [卸车作业_记事]'
                               +' from load_car LC RIGHT OUTER JOIN unload_car ULC ON LC.saveTime=ULC.saveTime'
                               +' where LC.saveTime='+''''+saveTimeStr+''''
@@ -171,8 +194,8 @@ begin
                               +'Lload_notepad AS [装车作业_记事],'
                               +'Usn AS [卸车作业_顺序],Ucargo_name AS [卸车作业_品名],'
                               +'Ucar_number AS [卸车作业_车号],UunloadMemo AS [卸车作业_备注],'
-                              +'Usend_station AS [卸车作业_到站],Uunload_place AS [卸车作业_装车地点],'
-                              +'Uentrant_time AS [卸车作业_送入时间],Ufinish_time AS [卸车作业_装完时间],'
+                              +'Usend_station AS [卸车作业_到站],Uunload_place AS [卸车作业_卸车地点],'
+                              +'Uentrant_time AS [卸车作业_送入时间],Ufinish_time AS [卸车作业_卸完时间],'
                               +'Utakeout_time AS [卸车作业_取出时间],Uunload_notepad AS [卸车作业_记事]'
                               +' from exportExcel'
                               +' where saveTime='+''''+saveTimeStr+''''
@@ -196,19 +219,6 @@ begin
   Result:=True;
 end;
 //query
-function TDataModule_ado.queryNormalOperatorCount:Integer;
-var
-  recordContI5:integer;
-begin
-  ADOQuery_temp.Close;
-  ADOQuery_temp.SQL.Clear;
-  ADOQuery_temp.SQL.Text:='select OperID from operator where tag=false order by OperID';
-  ADOQuery_temp.Open;
-
-  recordContI5:=ADOQuery_temp.RecordCount;
-  Result:=recordContI5;
-end;
-
 function TDataModule_ado.queryRecordCount(sqlStr:WideString):Integer;
 var
   recI1:integer;
@@ -442,6 +452,21 @@ begin
   taskVal:=ADOQuery_temp.Fields[0].AsInteger;
   Result:=taskVal;
 end;
+
+function TDataModule_ado.getSeriary_number(WPCFlagStrA:WideString):Integer;
+var
+  recInt1:Integer;
+begin
+  ADOQuery_temp.Close;
+  ADOQuery_temp.SQL.Clear;
+  ADOQuery_temp.SQL.Text:='select * from load_car,unload_car'
+                        +' where load_car.WPCFlag='+''''+WPCFlagStrA+''''
+                        +' and unload_car.WPCFlag='+''''+WPCFlagStrA+''''
+                        +' and load_car.seriary_number=unload_car.seriary_number';
+  ADOQuery_temp.Open;
+  recInt1:=ADOQuery_temp.RecordCount;
+  Result:=recInt1;
+end;
 //view
 function TDataModule_ado.view2task(tableNameStr,sqlStrA,time_rportstrA:WideString):Integer;
 var
@@ -459,7 +484,7 @@ begin
   Result:=recordCountI5;
 end;
 
-function TDataModule_ado.viewTask_load(WPCFlagStrA,maxBNOStrA:WideString):Integer;
+function TDataModule_ado.viewTask_load(WPCFlagStrA:WideString):Integer;
 var
   recordCountI4:integer;
 begin
@@ -471,7 +496,7 @@ begin
                         +'SN,past_time,saveTime,car_breed,dictionary'
                         +' from load_car'
                         +' where WPCFlag='+''''+WPCFlagStrA+''''
-                        +'OR batchNO='+maxBNOStrA
+                        //+'AND batchNO='+maxBNOStrA
                         +' order by seriary_number';
   ADODataSet_load.Open;
 
@@ -479,7 +504,7 @@ begin
   Result:=recordCountI4;
 end;
 
-function TDataModule_ado.viewTask_unload(WPCFlagStrA,maxBNOStrA:WideString):Integer;
+function TDataModule_ado.viewTask_unload(WPCFlagStrA:WideString):Integer;
 var
   recordCountI3:integer;
 begin
@@ -493,7 +518,7 @@ begin
                         +'SN,past_time,saveTime,car_breed,dictionary'
                         +' from unload_car'
                         +' where WPCFlag='+''''+WPCFlagStrA+''''
-                        +'OR batchNO='+maxBNOStrA
+                        //+'AND batchNO='+maxBNOStrA
                         +' order by seriary_number';
   ADODataSet_unload.Open;
 
@@ -551,6 +576,32 @@ begin
   //
   recordCountI1:=ADODataSet_trainOrder.RecordCount;
   Result:=recordCountI1;
+end;
+
+function TDataModule_ado.viewExpTrainOrd(pTimeStrA,quanExpTagStrA:WideString):Integer;
+var
+  recordCountI6:Integer;
+begin
+  ADODataSet_stevedore.Close;
+  ADODataSet_stevedore.CommandText:='select trian_number AS 流水号,seriary_number AS 辆序,'
+                +'car_number AS 车号,past_time AS 到达时间'
+                +' from trainOrder where past_time='
+                +''''+pTimeStrA+''''
+                +' and quanExpTag='
+                +''''+quanExpTagStrA+'''';
+  ADODataSet_stevedore.Open;
+  //
+  recordCountI6:=ADODataSet_stevedore.RecordCount;
+  Result:=recordCountI6;
+end;
+
+function TDataModule_ado.viewPublicSet(sqlStrA:WideString):Integer;
+begin
+  ADODataSet_publicSet.Close;
+  ADODataSet_publicSet.CommandText:=sqlStrA;
+  ADODataSet_publicSet.Open;
+
+  Result:=ADODataSet_publicSet.RecordCount;
 end;
 //max
 function TDataModule_ado.maxStevedoreNO:Integer;
@@ -783,9 +834,8 @@ begin
   Result:=True;
 end;
 
-function TDataModule_ado.addStevedore(adoDataSetX:TADODataSet;tagI:Integer):Boolean;
+function TDataModule_ado.addStevedore(adoDataSetX:TADODataSet;saveTimeStrA:WideString;tagI:Integer):Boolean;
 var
-  recI9,i2:integer;
   //
   tarryTimeD,tarryTimeD1,tarryTimeD2:Double;
   freeTimeI1:Double;
@@ -799,12 +849,11 @@ var
   sNotepadStr,sNOStr,pTimeStr,cBreedStr:WideString;
   taskTagStr,saveTimeStr:WideString;
 begin
-
-  recI9:=adoDataSetX.RecordCount;
   //
   sNOStr:=IntToStr(maxStevedoreNO+1);
-  //  
-  for i2:=0 to recI9-1 do
+  //
+  adoDataSetX.First;
+  while not adoDataSetX.Eof do
   begin
     snStr:=adoDataSetX.Fields[0].AsString;
     cargoNameStr:=adoDataSetX.Fields[1].AsString;
@@ -818,7 +867,7 @@ begin
     sNotepadStr:=adoDataSetX.Fields[9].AsString;
     //
     taskTagStr:=IntToStr(tagI);
-    saveTimeStr:=adoDataSetX.FieldByName('saveTime').AsString;
+    saveTimeStr:=saveTimeStrA;
     //
     pTimeStr:=adoDataSetX.FieldByName('past_time').AsString;
     cBreedStr:=adoDataSetX.FieldByName('car_breed').AsString;
@@ -871,7 +920,7 @@ begin
     adoDataSetX.Next;
   end;
 
-  Result:=True;
+  Result:=true;
 end;
 
 function TDataModule_ado.addWPC_single(snStrA:WideString;taskType:Integer):Boolean;
@@ -973,6 +1022,8 @@ var
   carBreedStr:WideString;
   //
   time_rportStr:WideString;
+  //2007.4.5
+  spaceCharStr:WideString;
 begin
   //
   ADODataSet_traintotalh.Close;
@@ -1004,14 +1055,16 @@ begin
     begin
       carBreedStr:='未知';
     end;
+    spaceCharStr:=' ';
     //insert trianOrder
     ADOQuery_Exec.Close;
     ADOQuery_Exec.SQL.Clear;
     ADOQuery_Exec.SQL.Text:='INSERT INTO trainOrder(seriary_number,car_number,'
-                        +'trian_number,past_time,car_breed,car_marque) values('
+                        +'trian_number,past_time,car_breed,car_marque,quanExpTag) values('
                         +''+snStr+''+','+''''+cNumStr+''''+','+''+tNumStr+''+','
                         +''''+time_rportStr+''''+','
-                        +''''+carBreedStr+''''+','+''''+cMarqueStr+''''+')';
+                        +''''+carBreedStr+''''+','+''''+cMarqueStr+''''+','
+                        +''''+spaceCharStr+''''+')';
     ADOQuery_Exec.ExecSQL;
       
     ADODataSet_traintotalh.Next;
@@ -1299,6 +1352,19 @@ begin
 
   Result:=True;
 end;
+
+function TDataModule_ado.modifyQuanExpTag(ExpTagStrA,tNumStrA,sNumStrA:WideString):Boolean;
+begin
+  ADOQuery_temp.Close;
+  ADOQuery_temp.SQL.Clear;
+  ADOQuery_temp.SQL.Text:='UPDATE trainOrder set quanExpTag='
+                        +''''+ExpTagStrA+''''
+                        +' where trian_number='+tNumStrA
+                        +' and seriary_number='+sNumStrA;
+  ADOQuery_temp.ExecSQL;
+
+  Result:=True;
+end;
 //save
 function TDataModule_ado.save2task(tableNameStr,saveTimeStr,maxBNOStrA:WideString):Boolean;
 var
@@ -1375,6 +1441,24 @@ end;
 procedure TDataModule_ado.DataModuleDestroy(Sender: TObject);
 begin
   xbfini.Destroy;
+end;
+
+procedure TDataModule_ado.ADODataSet_loadPostError(DataSet: TDataSet;
+  E: EDatabaseError; var Action: TDataAction);
+begin
+  e.Message:='辆序冲突！';
+end;
+
+procedure TDataModule_ado.ADODataSet_unloadPostError(DataSet: TDataSet;
+  E: EDatabaseError; var Action: TDataAction);
+begin
+  e.Message:='辆序冲突！';
+end;
+
+procedure TDataModule_ado.ADODataSet_2taskPostError(DataSet: TDataSet;
+  E: EDatabaseError; var Action: TDataAction);
+begin
+  e.Message:='辆序冲突！';
 end;
 
 end.

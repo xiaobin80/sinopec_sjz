@@ -10,7 +10,6 @@ object frmTrainOrd: TfrmTrainOrd
   Font.Name = #23435#20307
   Font.Style = []
   OldCreateOrder = False
-  OnClose = FormClose
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnShow = FormShow
@@ -1012,6 +1011,9 @@ object frmTrainOrd: TfrmTrainOrd
           Align = alLeft
           Caption = #36755#20837#39033
           TabOrder = 0
+          DesignSize = (
+            721
+            47)
           object Label19: TLabel
             Left = 18
             Top = 21
@@ -1155,11 +1157,13 @@ object frmTrainOrd: TfrmTrainOrd
             ParseInput = False
             TabOrder = 5
           end
-          object edtPlace: TEdit
+          object edtPlace: TComboBox
             Left = 624
             Top = 16
             Width = 92
             Height = 21
+            Anchors = [akRight, akBottom]
+            ItemHeight = 13
             TabOrder = 6
           end
         end

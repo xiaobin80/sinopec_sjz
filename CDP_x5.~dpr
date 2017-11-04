@@ -20,7 +20,6 @@ uses
   Uquantification in 'quantification\Uquantification.pas' {DataModule_quantification: TDataModule},
   Ulog in 'Ulog.pas' {frmLog},
   UpublicFunc in 'public\UpublicFunc.pas',
-  UcarKind in 'UcarKind.pas' {frmCarKind},
   Ubreed in 'Ubreed.pas' {frmBreed},
   UDataModule_ado in 'UDataModule_ado.pas' {DataModule_ado: TDataModule},
   UlogMemo in 'public\UlogMemo.pas' {frame_log: TFrame},
@@ -30,7 +29,8 @@ uses
   UqueryDate in 'UqueryDate.pas' {frmQueryDate},
   UexpQuant in 'quantification\UexpQuant.pas' {frmExpQuant},
   UGeneralCSV in 'GeneralCSV\UGeneralCSV.pas',
-  UprintRv5 in 'template\UprintRv5.pas' {DataModule_print: TDataModule};
+  UprintRv5 in 'template\UprintRv5.pas' {DataModule_print: TDataModule},
+  UpublicSet in 'public\UpublicSet.pas' {frmPulicSet};
 
 {$R *.res}
 
@@ -48,7 +48,7 @@ begin
     Application.Title := '车号数据处理';
     //DM first RUN
     Application.CreateForm(TDataModule_ado, DataModule_ado);
-   try
+  try
       frm_login :=Tfrm_login.Create(nil);
       frm_login.ShowModal;
     finally
